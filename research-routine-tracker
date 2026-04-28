@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research Journal — Daily Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F1EA;
+  --surface: #FDFCF9;
+  --surface2: #F0EDE6;
+  --border: #DDD9D0;
+  --border2: #C8C4BB;
+  --text: #18231A;
+  --text2: #5A6B5D;
+  --text3: #8A9B8D;
+  --green: #2D6A4F;
+  --green-light: #E4F0EA;
+  --green-mid: #4A9568;
+  --amber: #9A6B10;
+  --amber-light: #FDF3DC;
+  --coral: #B85335;
+  --coral-light: #FAEDE8;
+  --sidebar-w: 220px;
+  --radius: 10px;
+  --shadow: 0 1px 4px rgba(24,35,26,0.07), 0 4px 16px rgba(24,35,26,0.04);
+}
+[data-theme="dark"] {
+  --bg: #111713;
+  --surface: #181E19;
+  --surface2: #1F2820;
+  --border: #273029;
+  --border2: #344037;
+  --text: #DDE8DF;
+  --text2: #8AA08D;
+  --text3: #556658;
+  --green: #6BBF7A;
+  --green-light: #1A2E1D;
+  --green-mid: #4A9568;
+  --amber: #D4A847;
+  --amber-light: #221A07;
+  --coral: #D4724E;
+  --coral-light: #231410;
+  --shadow: 0 1px 4px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  transition: background 0.3s, color 0.3s;
+}
+h1,h2,h3,.serif { font-family: 'Lora', Georgia, serif; }
+ 
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: background 0.3s, border-color 0.3s;
+}
+.sidebar-logo {
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.logo-title {
+  font-family: 'Lora', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+.logo-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+}
+.sidebar-score {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.score-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 6px; }
+.score-display { display: flex; align-items: baseline; gap: 4px; }
+.score-num { font-family: 'Lora', serif; font-size: 32px; font-weight: 500; color: var(--green); line-height: 1; }
+.score-max { font-size: 13px; color: var(--text3); }
+.score-ring { margin-top: 8px; }
+.ring-track {
+  height: 5px; background: var(--surface2);
+  border-radius: 3px; overflow: hidden;
+}
+.ring-fill {
+  height: 100%; background: var(--green);
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.score-msg { font-size: 11px; color: var(--text3); margin-top: 5px; }
+.sidebar-nav { flex: 1; padding: 0.75rem 0.75rem; display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 8px;
+  font-size: 13.5px; font-weight: 400;
+  color: var(--text2); cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  border: none; background: transparent; width: 100%; text-align: left;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--green-light); color: var(--green); font-weight: 500; }
+.nav-icon { font-size: 15px; width: 20px; text-align: center; }
+.nav-badge {
+  margin-left: auto; font-size: 10px;
+  background: var(--green); color: white;
+  padding: 1px 6px; border-radius: 10px;
+  font-weight: 500;
+}
+.sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+.date-display { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
+.theme-btn {
+  font-size: 12px; color: var(--text2); background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 10px; cursor: pointer; width: 100%;
+  transition: all 0.15s;
+}
+.theme-btn:hover { background: var(--border); }
+ 
+/* MAIN */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+  padding: 2rem 2rem 3rem;
+  max-width: calc(100vw - var(--sidebar-w));
+}
+.screen { display: none; max-width: 680px; animation: fadeIn 0.2s ease; }
+.screen.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+ 
+/* HEADINGS */
+.page-title {
+  font-family: 'Lora', serif;
+  font-size: 24px; font-weight: 500;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.page-sub { font-size: 13px; color: var(--text3); margin-bottom: 1.75rem; }
+.section-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--text3); margin-bottom: 0.65rem; margin-top: 1.75rem;
+}
+.section-label:first-child { margin-top: 0; }
+ 
+/* CARDS */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 0.85rem;
+  box-shadow: var(--shadow);
+  transition: background 0.3s, border-color 0.3s;
+}
+.card-title {
+  font-family: 'Lora', serif;
+  font-size: 14px; font-weight: 500;
+  color: var(--text); margin-bottom: 0.85rem;
+}
+ 
+/* HABITS */
+.habit-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.1s;
+}
+.habit-item:hover { opacity: 0.85; }
+.habit-item:last-child { border-bottom: none; padding-bottom: 0; }
+.habit-item:first-child { padding-top: 0; }
+.h-check {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; background: transparent;
+}
+.h-check.done { background: var(--green); border-color: var(--green); }
+.checkmark { display: none; width: 7px; height: 11px; border: 2px solid white; border-top: none; border-left: none; transform: rotate(45deg) translateY(-1px); }
+.h-check.done .checkmark { display: block; }
+.h-label { flex: 1; font-size: 13.5px; color: var(--text); transition: color 0.2s; }
+.h-label.done { text-decoration: line-through; color: var(--text3); }
+.h-pts-badge {
+  font-size: 11px; font-weight: 500;
+  background: var(--green-light); color: var(--green);
+  padding: 2px 8px; border-radius: 20px; flex-shrink: 0;
+}
+.h-pts-badge.high { background: var(--amber-light); color: var(--amber); }
+ 
+/* STATS GRID */
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
+.stat-box { background: var(--surface2); border-radius: 8px; padding: 0.9rem 1rem; }
+.stat-val { font-family: 'Lora', serif; font-size: 26px; font-weight: 500; color: var(--text); line-height: 1; }
+.stat-lbl { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.stat-box.accent .stat-val { color: var(--green); }
+ 
+/* WEEK BARS */
+.week-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 8px; }
+.wday { text-align: center; }
+.wday-label { font-size: 10px; color: var(--text3); margin-bottom: 5px; }
+.wday-bar { height: 56px; background: var(--surface2); border-radius: 4px; position: relative; overflow: hidden; }
+.wday-fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--green); opacity: 0.85; border-radius: 4px 4px 0 0; transition: height 0.5s cubic-bezier(0.4,0,0.2,1); }
+.wday-fill.today { background: var(--green); opacity: 1; }
+.wday-score { font-size: 10px; color: var(--text3); margin-top: 4px; }
+.wday.today-col .wday-label { color: var(--green); font-weight: 500; }
+ 
+/* FORMS */
+.field-group { margin-bottom: 0.9rem; }
+.field-group:last-child { margin-bottom: 0; }
+.field-label { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+textarea, input[type="text"] {
+  width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px;
+  color: var(--text); background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 7px;
+  padding: 9px 11px; outline: none; resize: vertical;
+  transition: border-color 0.15s, background 0.3s;
+  line-height: 1.55;
+}
+textarea { min-height: 76px; }
+textarea:focus, input[type="text"]:focus {
+  border-color: var(--green); background: var(--surface);
+}
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+ 
+/* MOOD SELECTOR */
+.mood-row { display: flex; gap: 6px; }
+.mood-opt {
+  flex: 1; padding: 7px 4px; font-size: 11px; font-weight: 400;
+  border: 1px solid var(--border); border-radius: 7px;
+  background: var(--surface2); color: var(--text3);
+  cursor: pointer; text-align: center; transition: all 0.15s;
+}
+.mood-opt:hover { border-color: var(--border2); color: var(--text); }
+.mood-opt.sel { background: var(--green-light); border-color: var(--green); color: var(--green); font-weight: 500; }
+.mood-opt.sel.amber { background: var(--amber-light); border-color: var(--amber); color: var(--amber); }
+ 
+/* BUTTONS */
+.btn-primary {
+  background: var(--green); color: white;
+  border: none; border-radius: 8px;
+  padding: 10px 24px; font-size: 13px; font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer; width: 100%; margin-top: 0.75rem;
+  transition: background 0.15s, transform 0.1s;
+  letter-spacing: 0.01em;
+}
+.btn-primary:hover { background: var(--green-mid); }
+.btn-primary:active { transform: scale(0.99); }
+.save-feedback { font-size: 12px; color: var(--green); text-align: center; margin-top: 6px; min-height: 18px; transition: opacity 0.3s; }
+ 
+/* TAGS */
+.tag {
+  display: inline-block; font-size: 11px; padding: 3px 9px;
+  border-radius: 20px; font-weight: 500; margin-right: 4px;
+}
+.tag-green { background: var(--green-light); color: var(--green); }
+.tag-amber { background: var(--amber-light); color: var(--amber); }
+.tag-coral { background: var(--coral-light); color: var(--coral); }
+ 
+/* PROGRESS BARS */
+.prog-wrap { margin-bottom: 0.65rem; }
+.prog-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+.prog-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.prog-bar { height: 100%; border-radius: 3px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+.prog-bar.green { background: var(--green); }
+.prog-bar.amber { background: var(--amber); }
+ 
+/* RESEARCH PREVIEW */
+.research-preview {
+  padding: 0.85rem 1rem;
+  background: var(--green-light);
+  border-radius: 8px;
+  border-left: 3px solid var(--green);
+  margin-top: 1rem;
+}
+.rp-row { margin-bottom: 6px; font-size: 13px; color: var(--text); line-height: 1.5; }
+.rp-row:last-child { margin-bottom: 0; }
+.rp-key { font-weight: 500; color: var(--green); }
+ 
+/* DIVIDER */
+.divider { height: 1px; background: var(--border); margin: 1rem 0; }
+ 
+/* POINT POPUP */
+.pt-popup {
+  position: fixed;
+  font-size: 14px; font-weight: 500;
+  color: var(--green);
+  pointer-events: none;
+  z-index: 999;
+  animation: floatUp 1s ease-out forwards;
+}
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-40px); }
+}
+ 
+/* STREAK INDICATOR */
+.streak-flame {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--amber-light); color: var(--amber);
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 500;
+}
+ 
+/* ROUTINE CARD */
+.routine-row {
+  display: flex; gap: 14px; padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.routine-row:last-child { border-bottom: none; padding-bottom: 0; }
+.routine-time {
+  font-size: 11px; font-weight: 500; color: var(--green);
+  white-space: nowrap; padding-top: 2px; min-width: 80px;
+  font-family: 'DM Sans', sans-serif;
+}
+.routine-content { flex: 1; }
+.routine-title { font-size: 13.5px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.routine-why { font-size: 12px; color: var(--text3); line-height: 1.45; }
+ 
+/* RESPONSIVE */
+@media (max-width: 700px) {
+  :root { --sidebar-w: 0px; }
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding: 1rem; }
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+  .two-col { grid-template-columns: 1fr; }
+}
+ 
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+ 
+/* EMPTY STATE */
+.empty-state {
+  text-align: center; padding: 2.5rem 1rem;
+  color: var(--text3); font-size: 13px;
+}
+.empty-icon { font-size: 32px; margin-bottom: 0.5rem; }
+ 
+/* WEEKLY REVIEW SAVED INDICATOR */
+.review-meta { font-size: 11px; color: var(--text3); margin-bottom: 0.75rem; }
+</style>
+</head>
+<body>
+ 
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-title">Research Journal</div>
+    <div class="logo-sub">Cognitive Security Lab</div>
+  </div>
+  <div class="sidebar-score">
+    <div class="score-label">Today's score</div>
+    <div class="score-display">
+      <span class="score-num" id="sb-score">0</span>
+      <span class="score-max">/ 120 pts</span>
+    </div>
+    <div class="score-ring">
+      <div class="ring-track"><div class="ring-fill" id="sb-ring" style="width:0%"></div></div>
+      <div class="score-msg" id="sb-msg">Start your morning routine.</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <button class="nav-item active" onclick="showScreen('dash',this)">
+      <span class="nav-icon">◈</span> Overview
+    </button>
+    <button class="nav-item" onclick="showScreen('habits',this)">
+      <span class="nav-icon">✦</span> Habits
+      <span class="nav-badge" id="nav-done">0</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('research',this)">
+      <span class="nav-icon">◎</span> Research
+    </button>
+    <button class="nav-item" onclick="showScreen('notes',this)">
+      <span class="nav-icon">◇</span> Notes
+    </button>
+    <button class="nav-item" onclick="showScreen('week',this)">
+      <span class="nav-icon">▦</span> Week
+    </button>
+    <button class="nav-item" onclick="showScreen('routine',this)">
+      <span class="nav-icon">☀</span> My Routine
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="date-display" id="sidebar-date"></div>
+    <button class="theme-btn" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+</aside>
+ 
+<!-- MAIN CONTENT -->
+<main class="main">
+ 
+  <!-- DASHBOARD -->
+  <div class="screen active" id="screen-dash">
+    <div class="page-title">Good morning.</div>
+    <div class="page-sub" id="dash-greeting">Here's your day at a glance.</div>
+ 
+    <div class="section-label">Today</div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <div>
+          <div style="font-family:'Lora',serif;font-size:38px;font-weight:500;color:var(--green);line-height:1;" id="dash-score">0</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">points today</div>
+        </div>
+        <div style="text-align:right;">
+          <div id="streak-display"></div>
+          <div style="font-size:12px;color:var(--text3);margin-top:8px;" id="dash-habits-done">0 of 12 habits</div>
+        </div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span id="dp-label">Daily progress</span><span id="dp-pct">0%</span></div>
+        <div class="prog-track"><div class="prog-bar green" id="dp-bar" style="width:0%"></div></div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-top:8px;" id="dash-motivation">Every habit you check off today is a small act of care for your future self.</div>
+    </div>
+ 
+    <div class="section-label">This week</div>
+    <div class="card">
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Weekly consistency</span><span id="wc-pct">—</span></div>
+        <div class="prog-track"><div class="prog-bar amber" id="wc-bar" style="width:0%"></div></div>
+      </div>
+      <div class="week-grid" id="dash-week-bars"></div>
+    </div>
+ 
+    <div class="section-label">Lifetime</div>
+    <div class="stats-grid">
+      <div class="stat-box accent"><div class="stat-val" id="ls-streak">0</div><div class="stat-lbl">Day streak</div></div>
+      <div class="stat-box"><div class="stat-val" id="ls-total">0</div><div class="stat-lbl">Total points</div></div>
+      <div class="stat-box"><div class="stat-val" id="ls-days">0</div><div class="stat-lbl">Days logged</div></div>
+    </div>
+ 
+    <div class="section-label">Top habits this week</div>
+    <div class="card" id="top-habits-card">
+      <div class="empty-state" style="padding:1rem 0;">
+        <div>Complete habits to see your patterns here.</div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- HABITS -->
+  <div class="screen" id="screen-habits">
+    <div class="page-title">Daily Habits</div>
+    <div class="page-sub" id="habits-sub">Check off each habit as you complete it.</div>
+ 
+    <div class="section-label">Morning</div>
+    <div class="card" id="hab-morning"></div>
+ 
+    <div class="section-label">Research block</div>
+    <div class="card" id="hab-research"></div>
+ 
+    <div class="section-label">Evening</div>
+    <div class="card" id="hab-evening"></div>
+ 
+    <div class="section-label">Today's breakdown</div>
+    <div class="card">
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Morning habits</span><span id="m-prog-pct">0%</span></div>
+        <div class="prog-track"><div class="prog-bar green" id="m-prog" style="width:0%"></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Research habits</span><span id="r-prog-pct">0%</span></div>
+        <div class="prog-track"><div class="prog-bar amber" id="r-prog" style="width:0%"></div></div>
+      </div>
+      <div class="prog-wrap" style="margin-bottom:0;">
+        <div class="prog-label"><span>Evening habits</span><span id="e-prog-pct">0%</span></div>
+        <div class="prog-track"><div class="prog-bar green" id="e-prog" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- RESEARCH DIARY -->
+  <div class="screen" id="screen-research">
+    <div class="page-title">Research Diary</div>
+    <div class="page-sub" id="research-date-sub">Log what you worked on, learned, and discovered today.</div>
+ 
+    <div class="section-label">Work block</div>
+    <div class="card">
+      <div class="field-group">
+        <div class="field-label">Time block worked</div>
+        <input type="text" id="r-timeblock" placeholder="e.g. 9:30 – 12:30 AM — independent research (cognitive security)">
+      </div>
+      <div class="field-group">
+        <div class="field-label">What did you produce today?</div>
+        <textarea id="r-output" placeholder="e.g. Drafted section 2.1 of literature review, wrote 400 words on persuasion heuristics, finished coding the data pipeline for bee experiment..."></textarea>
+      </div>
+    </div>
+ 
+    <div class="section-label">Learning & thinking</div>
+    <div class="card">
+      <div class="field-group">
+        <div class="field-label">What did you learn or discover?</div>
+        <textarea id="r-learned" placeholder="Key insight, concept, finding, or 'aha' moment from today's reading or work..."></textarea>
+      </div>
+      <div class="field-group" style="margin-bottom:0;">
+        <div class="field-label">What open question came up?</div>
+        <textarea id="r-question" placeholder="A question you couldn't answer today — to revisit tomorrow or explore further..."></textarea>
+      </div>
+    </div>
+ 
+    <div class="section-label">Connection to your research</div>
+    <div class="card">
+      <div class="field-group" style="margin-bottom:0;">
+        <div class="field-label">How does today's work connect to cognitive security / persuasive AI?</div>
+        <textarea id="r-connect" placeholder="Link what you did today to your main research thread. Even if you worked on the bee project, what data skills did you build?"></textarea>
+      </div>
+    </div>
+ 
+    <button class="btn-primary" onclick="saveResearch()">Save research log</button>
+    <div class="save-feedback" id="r-feedback"></div>
+ 
+    <div id="r-preview-wrap" style="display:none;">
+      <div class="section-label">Saved today</div>
+      <div class="research-preview" id="r-preview"></div>
+    </div>
+  </div>
+ 
+  <!-- NOTES -->
+  <div class="screen" id="screen-notes">
+    <div class="page-title">Daily Notes</div>
+    <div class="page-sub">Set your intention in the morning. Reflect in the evening.</div>
+ 
+    <div class="section-label">Morning — intention</div>
+    <div class="card">
+      <div class="field-group" style="margin-bottom:0;">
+        <div class="field-label">One clear intention for today</div>
+        <textarea id="n-intention" style="min-height:64px;" placeholder="e.g. I will protect my 9:30–12:30 block for deep research and not check email until lunch. I will not skip guitar tonight."></textarea>
+      </div>
+    </div>
+ 
+    <div class="section-label">Mood & energy</div>
+    <div class="card">
+      <div class="field-group">
+        <div class="field-label">How's your mood today?</div>
+        <div class="mood-row" id="mood-row"></div>
+      </div>
+      <div class="field-group" style="margin-bottom:0;">
+        <div class="field-label">Energy level</div>
+        <div class="mood-row" id="energy-row"></div>
+      </div>
+    </div>
+ 
+    <div class="section-label">Evening — reflection</div>
+    <div class="card">
+      <div class="two-col">
+        <div class="field-group">
+          <div class="field-label">One thing I'm proud of today</div>
+          <textarea id="n-proud" style="min-height:72px;" placeholder="Even small things count — staying off phone, finishing a paragraph, going for a walk..."></textarea>
+        </div>
+        <div class="field-group">
+          <div class="field-label">One thing to improve tomorrow</div>
+          <textarea id="n-improve" style="min-height:72px;" placeholder="Be specific and kind — not 'I was terrible' but 'I'll start research before checking email'..."></textarea>
+        </div>
+      </div>
+      <div class="field-group" style="margin-bottom:0;">
+        <div class="field-label">Free reflection — anything on your mind</div>
+        <textarea id="n-reflection" placeholder="Research ideas, how you felt, guitar progress, something you're curious about, anything..."></textarea>
+      </div>
+    </div>
+ 
+    <button class="btn-primary" onclick="saveNotes()">Save notes</button>
+    <div class="save-feedback" id="n-feedback"></div>
+  </div>
+ 
+  <!-- WEEKLY REVIEW -->
+  <div class="screen" id="screen-week">
+    <div class="page-title">Weekly Review</div>
+    <div class="page-sub">Do this every Sunday evening. Takes 10–15 minutes.</div>
+ 
+    <div class="section-label">This week's performance</div>
+    <div class="card">
+      <div class="stats-grid" style="margin-bottom:1rem;">
+        <div class="stat-box accent"><div class="stat-val" id="w-avg">0</div><div class="stat-lbl">Avg daily pts</div></div>
+        <div class="stat-box"><div class="stat-val" id="w-best">0</div><div class="stat-lbl">Best day</div></div>
+        <div class="stat-box"><div class="stat-val" id="w-active">0/7</div><div class="stat-lbl">Active days</div></div>
+      </div>
+      <div class="week-grid" id="week-bars-full"></div>
+    </div>
+ 
+    <div class="section-label">Reflection</div>
+    <div class="card">
+      <div class="review-meta" id="review-last-saved"></div>
+      <div class="field-group">
+        <div class="field-label">What went well this week?</div>
+        <textarea id="wr-well" placeholder="Research breakthroughs, consistent habits, good sleep, guitar progress, a conversation that energised you..."></textarea>
+      </div>
+      <div class="field-group">
+        <div class="field-label">What did I struggle with?</div>
+        <textarea id="wr-struggle" placeholder="Procrastination, skipping exercise, disrupted mornings, too much screen time, feeling isolated..."></textarea>
+      </div>
+      <div class="field-group">
+        <div class="field-label">What did I produce for my research?</div>
+        <textarea id="wr-produced" placeholder="Papers read, concepts understood, code written, ideas developed, study group contributions, bee project progress..."></textarea>
+      </div>
+      <div class="field-group" style="margin-bottom:0;">
+        <div class="field-label">What should I adjust next week?</div>
+        <textarea id="wr-adjust" placeholder="One or two concrete, realistic changes — not a complete overhaul. Small adjustments compound."></textarea>
+      </div>
+    </div>
+ 
+    <button class="btn-primary" onclick="saveWeeklyReview()">Save weekly review</button>
+    <div class="save-feedback" id="wr-feedback"></div>
+  </div>
+ 
+  <!-- ROUTINE REFERENCE -->
+  <div class="screen" id="screen-routine">
+    <div class="page-title">My Daily Routine</div>
+    <div class="page-sub">Your personalised schedule — tailored to your research life.</div>
+ 
+    <div class="section-label">Morning (7:30 → 9:30 AM)</div>
+    <div class="card">
+      <div class="routine-row">
+        <div class="routine-time">7:30 – 7:45</div>
+        <div class="routine-content">
+          <div class="routine-title">Wake + Hydrate</div>
+          <div class="routine-why">Drink a full glass of water. Open curtains, get light. No phone. Cortisol peaks in the first 30 min — light and hydration anchor your natural alertness.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">7:45 – 8:10</div>
+        <div class="routine-content">
+          <div class="routine-title">Hygiene + Light Movement</div>
+          <div class="routine-why">Shower, get dressed, 5 min of stretching or slow walking. Body temperature change after showering signals wakefulness better than caffeine alone.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">8:10 – 8:40</div>
+        <div class="routine-content">
+          <div class="routine-title">Proper Breakfast (sit down, no screens)</div>
+          <div class="routine-why">Protein + complex carbs + fat. Stabilises blood sugar for 3–4 hours — exactly the window you need for your first deep work block. Rushing breakfast causes a focus crash around 10 AM.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">8:40 – 9:00</div>
+        <div class="routine-content">
+          <div class="routine-title">Morning Grounding</div>
+          <div class="routine-why">Write one intention for the day. Play guitar for 10–15 min casually. This primes your working memory before the lab throws things at you.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">9:00 – 9:20</div>
+        <div class="routine-content">
+          <div class="routine-title">Research Planning</div>
+          <div class="routine-why">Review tasks. Identify ONE most important output for the day. Block your 8 hours deliberately. Deciding before work begins eliminates decision fatigue mid-session.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">9:20 – 9:30</div>
+        <div class="routine-content">
+          <div class="routine-title">Settle In — Threshold Ritual</div>
+          <div class="routine-why">Make tea or coffee. Get to your workspace. Open your tools. A brief consistent ritual signals your nervous system that deep work is beginning.</div>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="section-label">Research Block (9:30 AM → 6:30 PM)</div>
+    <div class="card">
+      <div class="routine-row">
+        <div class="routine-time">9:30 – 12:30</div>
+        <div class="routine-content">
+          <div class="routine-title">Deep Zone — YOUR Research</div>
+          <div class="routine-why">Cognitive security, persuasive AI, independent work. Hardest thinking, writing, math. Your brain is sharpest here. Protect this block fiercely.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">11:00 – 12:30</div>
+        <div class="routine-content">
+          <div class="routine-title">Tue/Thu: Study Group (Mathematical Modelling)</div>
+          <div class="routine-why">Shift your deep work to 9:30–10:45 on these days. Group runs 11–12:30, then lunch immediately after.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">12:30 – 1:00</div>
+        <div class="routine-content">
+          <div class="routine-title">Lunch — sit down, step away</div>
+          <div class="routine-why">Real break. Not at your desk. Your brain needs to downshift to consolidate the morning's work.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">1:00 – 2:30</div>
+        <div class="routine-content">
+          <div class="routine-title">Collaborative / Bee Project</div>
+          <div class="routine-why">Structured tasks, data pipelines, hands-on bee work. Needs less raw focus than deep research — well-placed in the post-lunch window.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">2:30 – 5:30</div>
+        <div class="routine-content">
+          <div class="routine-title">Output Zone — Reading, Writing, Coding</div>
+          <div class="routine-why">Afternoon energy dip recovers around 2:30. Use it for processing (papers, math, coding) rather than generating new ideas.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">5:30 – 6:30</div>
+        <div class="routine-content">
+          <div class="routine-title">Wind-Down — Review + Research Diary</div>
+          <div class="routine-why">Summarise the day's output, fill your research diary, plan tomorrow's ONE thing. Closing the loop prevents lingering anxiety at night.</div>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="section-label">Evening (6:30 PM → 11:30 PM)</div>
+    <div class="card">
+      <div class="routine-row">
+        <div class="routine-time">6:30 – 7:30</div>
+        <div class="routine-content">
+          <div class="routine-title">Dinner — cook if you want</div>
+          <div class="routine-why">Cooking is decompression. Take your time. Eating at a consistent hour helps circadian rhythm and sleep quality.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">7:30 – 8:30</div>
+        <div class="routine-content">
+          <div class="routine-title">Free Time — Walk, Movie, Music</div>
+          <div class="routine-why">This is not optional. Genuine rest prevents burnout. Walking outside at dusk is one of the most effective mood regulators known.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">8:30 – 9:30</div>
+        <div class="routine-content">
+          <div class="routine-title">Guitar Practice + Creative Time</div>
+          <div class="routine-why">30–45 min of structured practice. Creative activities at night — when the day's pressure is off — tend to be more expressive and enjoyable.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">9:30 – 10:30</div>
+        <div class="routine-content">
+          <div class="routine-title">Wind Down — Evening Reflection</div>
+          <div class="routine-why">Fill your daily notes. Let phone use naturally reduce. Your nervous system needs a gradient into sleep, not a hard cutoff.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">10:30 – 11:30</div>
+        <div class="routine-content">
+          <div class="routine-title">No Phone Hour</div>
+          <div class="routine-why">Read fiction, journal lightly, stretch. Blue light and social media activate your stress response. This hour is what makes sleep actually restful.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time">11:30 PM</div>
+        <div class="routine-content">
+          <div class="routine-title">Sleep</div>
+          <div class="routine-why">Non-negotiable. Memory consolidation — including what you studied — happens here. Cognitive performance tanks after 6 hours. Protect this.</div>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="section-label">Sustainability rules</div>
+    <div class="card">
+      <div class="routine-row">
+        <div class="routine-time" style="color:var(--amber);">Rule 1</div>
+        <div class="routine-content">
+          <div class="routine-title">Miss a day? Reset the next morning.</div>
+          <div class="routine-why">No guilt spirals. The goal is the average over weeks, not perfection every day.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time" style="color:var(--amber);">Rule 2</div>
+        <div class="routine-content">
+          <div class="routine-title">One non-negotiable per day.</div>
+          <div class="routine-why">If everything falls apart, still do: breakfast + 4 hours research. That's the floor.</div>
+        </div>
+      </div>
+      <div class="routine-row">
+        <div class="routine-time" style="color:var(--amber);">Rule 3</div>
+        <div class="routine-content">
+          <div class="routine-title">Weekends are lighter.</div>
+          <div class="routine-why">4–5 hours research max. More guitar, more walking, more rest. You are a person, not a productivity machine.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+</main>
+ 
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+ 
+const HABITS = [
+  // Morning group (0)
+  { id:'wake',       label:'Woke up on time (7:30–7:45 AM)',        pts:5,  group:0 },
+  { id:'nophone_am', label:'No phone — first hour after waking',    pts:10, group:0, high:true },
+  { id:'breakfast',  label:'Proper breakfast (sat down, no rush)',   pts:5,  group:0 },
+  // Research group (1)
+  { id:'res8h',      label:'8 hours of research completed',         pts:20, group:1, high:true },
+  { id:'deepwork',   label:'Deep work block completed (90+ min)',   pts:15, group:1, high:true },
+  { id:'reading',    label:'Read / studied math / reviewed papers', pts:10, group:1 },
+  { id:'lunch',      label:'Proper lunch break (away from desk)',   pts:5,  group:1 },
+  { id:'exercise',   label:'Exercise or meaningful walk',           pts:15, group:1, high:true },
+  // Evening group (2)
+  { id:'guitar',     label:'Guitar practice',                       pts:10, group:2 },
+  { id:'dinner',     label:'Proper dinner',                         pts:5,  group:2 },
+  { id:'nophone_pm', label:'No phone — 1 hour before bed',         pts:10, group:2, high:true },
+  { id:'sleep',      label:'In bed by 11:30 PM',                   pts:10, group:2, high:true },
+];
+ 
+const MAX_PTS = HABITS.reduce((s,h) => s+h.pts, 0); // 120
+const DAYS_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MOODS = ['Very low','Low','Okay','Good','Great'];
+ 
+function todayKey() {
+  return new Date().toISOString().slice(0,10);
+}
+ 
+function getState() {
+  try { return JSON.parse(localStorage.getItem('rj_v3') || '{}'); } catch(e) { return {}; }
+}
+function setState(s) {
+  try { localStorage.setItem('rj_v3', JSON.stringify(s)); } catch(e) {}
+}
+function getTodayData() {
+  const s = getState(), d = todayKey();
+  if (!s[d]) s[d] = { check:{}, research:{}, notes:{}, mood:null, energy:null };
+  return s[d];
+}
+function saveTodayField(field, val) {
+  const s = getState(), d = todayKey();
+  if (!s[d]) s[d] = { check:{}, research:{}, notes:{}, mood:null, energy:null };
+  if (typeof field === 'object') Object.assign(s[d], field);
+  else s[d][field] = val;
+  setState(s);
+}
+ 
+function calcScore(check) {
+  return HABITS.reduce((sum,h) => sum + (check && check[h.id] ? h.pts : 0), 0);
+}
+ 
+// ─── UI HELPERS ─────────────────────────────────────────────────────────────
+ 
+function showScreen(name, el) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (name === 'research') loadResearch();
+  if (name === 'notes') { loadNotes(); buildMoodRows(); }
+  if (name === 'week') { loadWeeklyReview(); renderWeekScreen(); }
+}
+ 
+function showFeedback(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.textContent='', 300); }, 2500);
+}
+ 
+function showPointPopup(pts, evt) {
+  const pop = document.createElement('div');
+  pop.className = 'pt-popup';
+  pop.textContent = '+' + pts + ' pts';
+  pop.style.left = (evt.clientX - 20) + 'px';
+  pop.style.top = (evt.clientY - 10) + 'px';
+  document.body.appendChild(pop);
+  setTimeout(() => pop.remove(), 1000);
+}
+ 
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur === 'dark' ? '' : 'dark');
+  localStorage.setItem('rj_theme', cur === 'dark' ? 'light' : 'dark');
+}
+ 
+// ─── CHECKLIST ──────────────────────────────────────────────────────────────
+ 
+function buildHabits() {
+  const data = getTodayData();
+  const groups = [
+    { id:'hab-morning', idx:0 },
+    { id:'hab-research', idx:1 },
+    { id:'hab-evening', idx:2 },
+  ];
+  groups.forEach(g => {
+    const el = document.getElementById(g.id);
+    el.innerHTML = '';
+    HABITS.filter(h => h.group === g.idx).forEach(h => {
+      const done = !!data.check[h.id];
+      const row = document.createElement('div');
+      row.className = 'habit-item';
+      row.id = 'hrow-' + h.id;
+      row.innerHTML = `
+        <div class="h-check ${done?'done':''}" id="hchk-${h.id}"><div class="checkmark"></div></div>
+        <div class="h-label ${done?'done':''}" id="hlbl-${h.id}">${h.label}</div>
+        <div class="h-pts-badge ${h.high?'high':''}">${h.pts}pts</div>
+      `;
+      row.addEventListener('click', (evt) => toggleHabit(h.id, evt));
+      el.appendChild(row);
+    });
+  });
+}
+ 
+function toggleHabit(id, evt) {
+  const s = getState(), d = todayKey();
+  if (!s[d]) s[d] = { check:{}, research:{}, notes:{}, mood:null, energy:null };
+  const wasOff = !s[d].check[id];
+  s[d].check[id] = wasOff;
+  setState(s);
+ 
+  const done = wasOff;
+  const chk = document.getElementById('hchk-'+id);
+  const lbl = document.getElementById('hlbl-'+id);
+  if (chk) { chk.className = 'h-check' + (done?' done':''); }
+  if (lbl) { lbl.className = 'h-label' + (done?' done':''); }
+ 
+  const habit = HABITS.find(h=>h.id===id);
+  if (done && habit && evt) showPointPopup(habit.pts, evt);
+ 
+  updateAllScores();
+}
+ 
+// ─── SCORES & STATS ──────────────────────────────────────────────────────────
+ 
+function updateAllScores() {
+  const data = getTodayData();
+  const score = calcScore(data.check);
+  const pct = Math.round(score / MAX_PTS * 100);
+  const done = HABITS.filter(h => data.check[h.id]).length;
+ 
+  // Sidebar
+  document.getElementById('sb-score').textContent = score;
+  document.getElementById('sb-ring').style.width = pct + '%';
+  const msgs = ['Start your morning routine.','Good — keep building.','Halfway there, nice work.','Strong day, nearly there.','Excellent — full marks!'];
+  document.getElementById('sb-msg').textContent = msgs[Math.min(4, Math.floor(pct/25))];
+  document.getElementById('nav-done').textContent = done;
+ 
+  // Dashboard
+  document.getElementById('dash-score').textContent = score;
+  document.getElementById('dash-habits-done').textContent = done + ' of ' + HABITS.length + ' habits';
+  document.getElementById('dp-pct').textContent = pct + '%';
+  document.getElementById('dp-bar').style.width = pct + '%';
+ 
+  const motivations = [
+    'Every habit you check off today is a small act of care for your future self.',
+    'Good start — momentum is building. One habit at a time.',
+    'Halfway through. Your consistency is visible in the bars below.',
+    'Almost there — close the day strong.',
+    'Perfect score today. Your routine is working. Rest well tonight.',
+  ];
+  document.getElementById('dash-motivation').textContent = motivations[Math.min(4, Math.floor(pct/25))];
+ 
+  // Habits sub-label
+  document.getElementById('habits-sub').textContent = `${done} of ${HABITS.length} habits completed — ${score}/${MAX_PTS} points`;
+ 
+  // Group progress bars
+  const grpTotals = [0,1,2].map(g => HABITS.filter(h=>h.group===g).reduce((s,h)=>s+h.pts,0));
+  const grpScores = [0,1,2].map(g => HABITS.filter(h=>h.group===g).reduce((s,h)=>s+(data.check[h.id]?h.pts:0),0));
+  ['m','r','e'].forEach((pfx,i) => {
+    const p = Math.round(grpScores[i]/grpTotals[i]*100);
+    document.getElementById(pfx+'-prog').style.width = p+'%';
+    document.getElementById(pfx+'-prog-pct').textContent = p+'%';
+  });
+ 
+  updateWeekSummary();
+  updateLifetimeStats();
+  renderTopHabits();
+}
+ 
+function getWeekDates() {
+  const dates = [];
+  for (let i=6; i>=0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    dates.push(d.toISOString().slice(0,10));
+  }
+  return dates;
+}
+ 
+function updateWeekSummary() {
+  const s = getState();
+  const dates = getWeekDates();
+  const scores = dates.map(d => s[d] ? calcScore(s[d].check||{}) : null);
+  const valid = scores.filter(x => x !== null);
+  const avg = valid.length ? Math.round(valid.reduce((a,b)=>a+b,0)/valid.length) : 0;
+  const pct = Math.round(avg/MAX_PTS*100);
+ 
+  document.getElementById('wc-pct').textContent = pct + '%';
+  document.getElementById('wc-bar').style.width = pct + '%';
+ 
+  renderWeekBars('dash-week-bars', dates, scores);
+}
+ 
+function renderWeekBars(elId, dates, scores) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = '';
+  const today = todayKey();
+  dates.forEach((d, i) => {
+    const sc = scores[i];
+    const pct = sc !== null ? Math.round(sc/MAX_PTS*100) : 0;
+    const isToday = d === today;
+    const dayIdx = new Date(d+'T12:00:00').getDay();
+    const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dayIdx];
+    const div = document.createElement('div');
+    div.className = 'wday' + (isToday?' today-col':'');
+    div.innerHTML = `
+      <div class="wday-label">${dayName}</div>
+      <div class="wday-bar"><div class="wday-fill ${isToday?'today':''}" style="height:${pct}%"></div></div>
+      <div class="wday-score">${sc!==null?sc:'–'}</div>
+    `;
+    el.appendChild(div);
+  });
+}
+ 
+function updateLifetimeStats() {
+  const s = getState();
+  const days = Object.keys(s).filter(k => k.match(/^\d{4}-\d{2}-\d{2}$/)).sort();
+  const total = days.reduce((sum,d) => sum+calcScore(s[d].check||{}), 0);
+  document.getElementById('ls-total').textContent = total;
+  document.getElementById('ls-days').textContent = days.length;
+ 
+  let streak = 0;
+  for (let i=0; i<60; i++) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = d.toISOString().slice(0,10);
+    if (s[k] && calcScore(s[k].check||{}) > 0) streak++;
+    else if (i>0) break;
+  }
+  document.getElementById('ls-streak').textContent = streak;
+ 
+  const sdEl = document.getElementById('streak-display');
+  if (streak > 0) {
+    sdEl.innerHTML = `<div class="streak-flame">🔥 ${streak}-day streak</div>`;
+  } else {
+    sdEl.innerHTML = '';
+  }
+}
+ 
+function renderTopHabits() {
+  const s = getState();
+  const dates = getWeekDates();
+  const counts = {};
+  HABITS.forEach(h => counts[h.id] = 0);
+  dates.forEach(d => {
+    if (s[d] && s[d].check) {
+      HABITS.forEach(h => { if(s[d].check[h.id]) counts[h.id]++; });
+    }
+  });
+  const sorted = HABITS.slice().sort((a,b) => counts[b.id]-counts[a.id]).slice(0,5);
+  const el = document.getElementById('top-habits-card');
+  const anyDone = Object.values(counts).some(v=>v>0);
+  if (!anyDone) {
+    el.innerHTML = '<div class="empty-state" style="padding:1rem 0;"><div>Complete habits to see your patterns here.</div></div>';
+    return;
+  }
+  el.innerHTML = sorted.map(h => `
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);" class="habit-item" style="cursor:default;">
+      <div style="font-size:12px;color:var(--text3);min-width:70px;">${h.label.length>30?h.label.slice(0,30)+'…':h.label}</div>
+      <div style="flex:1;">
+        <div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${Math.round(counts[h.id]/7*100)}%;background:var(--green);border-radius:3px;"></div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);min-width:30px;text-align:right;">${counts[h.id]}/7</div>
+    </div>
+  `).join('');
+}
+ 
+// ─── RESEARCH DIARY ──────────────────────────────────────────────────────────
+ 
+function loadResearch() {
+  const data = getTodayData();
+  const r = data.research || {};
+  document.getElementById('r-timeblock').value = r.timeblock||'';
+  document.getElementById('r-output').value = r.output||'';
+  document.getElementById('r-learned').value = r.learned||'';
+  document.getElementById('r-question').value = r.question||'';
+  document.getElementById('r-connect').value = r.connect||'';
+  renderResearchPreview(r);
+  document.getElementById('research-date-sub').textContent = 'Today — ' + formatDateLong(new Date());
+}
+ 
+function saveResearch() {
+  const r = {
+    timeblock: document.getElementById('r-timeblock').value.trim(),
+    output:    document.getElementById('r-output').value.trim(),
+    learned:   document.getElementById('r-learned').value.trim(),
+    question:  document.getElementById('r-question').value.trim(),
+    connect:   document.getElementById('r-connect').value.trim(),
+  };
+  saveTodayField('research', r);
+  renderResearchPreview(r);
+  showFeedback('r-feedback', '✓ Research log saved for ' + formatDateShort(new Date()));
+}
+ 
+function renderResearchPreview(r) {
+  const wrap = document.getElementById('r-preview-wrap');
+  const el = document.getElementById('r-preview');
+  if (!r || (!r.learned && !r.output && !r.connect)) { wrap.style.display='none'; return; }
+  wrap.style.display = 'block';
+  const rows = [
+    r.timeblock ? `<div class="rp-row"><span class="tag tag-green">${r.timeblock}</span></div>` : '',
+    r.output    ? `<div class="rp-row"><span class="rp-key">Output:</span> ${r.output}</div>` : '',
+    r.learned   ? `<div class="rp-row"><span class="rp-key">Learned:</span> ${r.learned}</div>` : '',
+    r.question  ? `<div class="rp-row"><span class="rp-key">Open question:</span> ${r.question}</div>` : '',
+    r.connect   ? `<div class="rp-row"><span class="rp-key">Connection:</span> ${r.connect}</div>` : '',
+  ].filter(Boolean);
+  el.innerHTML = rows.join('');
+}
+ 
+// ─── NOTES ───────────────────────────────────────────────────────────────────
+ 
+function loadNotes() {
+  const data = getTodayData();
+  const n = data.notes || {};
+  document.getElementById('n-intention').value = n.intention||'';
+  document.getElementById('n-proud').value = n.proud||'';
+  document.getElementById('n-improve').value = n.improve||'';
+  document.getElementById('n-reflection').value = n.reflection||'';
+}
+ 
+function buildMoodRows() {
+  const data = getTodayData();
+  ['mood','energy'].forEach(type => {
+    const row = document.getElementById(type+'-row');
+    row.innerHTML = '';
+    MOODS.forEach((m,i) => {
+      const btn = document.createElement('div');
+      const sel = data[type] === i;
+      btn.className = 'mood-opt' + (sel?' sel':'') + (type==='energy'&&sel?' amber':'');
+      btn.textContent = m;
+      btn.onclick = () => {
+        const s = getState(), d = todayKey();
+        if (!s[d]) s[d] = { check:{}, research:{}, notes:{}, mood:null, energy:null };
+        s[d][type] = i;
+        setState(s);
+        buildMoodRows();
+      };
+      row.appendChild(btn);
+    });
+  });
+}
+ 
+function saveNotes() {
+  const n = {
+    intention: document.getElementById('n-intention').value.trim(),
+    proud:     document.getElementById('n-proud').value.trim(),
+    improve:   document.getElementById('n-improve').value.trim(),
+    reflection:document.getElementById('n-reflection').value.trim(),
+  };
+  saveTodayField('notes', n);
+  showFeedback('n-feedback', '✓ Notes saved for ' + formatDateShort(new Date()));
+}
+ 
+// ─── WEEKLY REVIEW ────────────────────────────────────────────────────────────
+ 
+function renderWeekScreen() {
+  const s = getState();
+  const dates = getWeekDates();
+  const scores = dates.map(d => s[d] ? calcScore(s[d].check||{}) : null);
+  const valid = scores.filter(x=>x!==null);
+  const avg = valid.length ? Math.round(valid.reduce((a,b)=>a+b,0)/valid.length) : 0;
+  const best = valid.length ? Math.max(...valid) : 0;
+ 
+  document.getElementById('w-avg').textContent = avg;
+  document.getElementById('w-best').textContent = best;
+  document.getElementById('w-active').textContent = valid.length+'/7';
+  renderWeekBars('week-bars-full', dates, scores);
+}
+ 
+function loadWeeklyReview() {
+  const s = getState();
+  const wr = s._weeklyReview || {};
+  document.getElementById('wr-well').value = wr.well||'';
+  document.getElementById('wr-struggle').value = wr.struggle||'';
+  document.getElementById('wr-produced').value = wr.produced||'';
+  document.getElementById('wr-adjust').value = wr.adjust||'';
+  const meta = document.getElementById('review-last-saved');
+  meta.textContent = wr.saved ? 'Last saved: ' + wr.saved : 'Not yet saved this week.';
+}
+ 
+function saveWeeklyReview() {
+  const s = getState();
+  s._weeklyReview = {
+    well:     document.getElementById('wr-well').value.trim(),
+    struggle: document.getElementById('wr-struggle').value.trim(),
+    produced: document.getElementById('wr-produced').value.trim(),
+    adjust:   document.getElementById('wr-adjust').value.trim(),
+    saved:    formatDateLong(new Date()),
+  };
+  setState(s);
+  document.getElementById('review-last-saved').textContent = 'Last saved: ' + s._weeklyReview.saved;
+  showFeedback('wr-feedback', '✓ Weekly review saved.');
+}
+ 
+// ─── DATE HELPERS ─────────────────────────────────────────────────────────────
+ 
+function formatDateLong(d) {
+  return d.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+function formatDateShort(d) {
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+ 
+function setDateDisplays() {
+  const now = new Date();
+  const long = formatDateLong(now);
+  document.getElementById('sidebar-date').textContent = long;
+  document.getElementById('dash-greeting').textContent = long;
+}
+ 
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+ 
+function init() {
+  // Theme
+  const savedTheme = localStorage.getItem('rj_theme');
+  if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme','dark');
+ 
+  setDateDisplays();
+  buildHabits();
+  updateAllScores();
+ 
+  // Auto-save notes and research on input
+  ['n-intention','n-proud','n-improve','n-reflection'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('blur', () => {
+      const n = {
+        intention: document.getElementById('n-intention').value.trim(),
+        proud:     document.getElementById('n-proud').value.trim(),
+        improve:   document.getElementById('n-improve').value.trim(),
+        reflection:document.getElementById('n-reflection').value.trim(),
+      };
+      saveTodayField('notes', n);
+    });
+  });
+  ['r-timeblock','r-output','r-learned','r-question','r-connect'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('blur', () => {
+      const r = {
+        timeblock: document.getElementById('r-timeblock').value.trim(),
+        output:    document.getElementById('r-output').value.trim(),
+        learned:   document.getElementById('r-learned').value.trim(),
+        question:  document.getElementById('r-question').value.trim(),
+        connect:   document.getElementById('r-connect').value.trim(),
+      };
+      saveTodayField('research', r);
+      renderResearchPreview(r);
+    });
+  });
+}
+ 
+init();
+</script>
+</body>
+</html>
